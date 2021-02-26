@@ -10,7 +10,7 @@ function App() {
   const fetchUsers = () => {
     fetch(endpoint, {
       method: 'POST',
-      body: JSON.stringify(query)
+      body: JSON.stringify(query),
     }).then(res => [
       res.json()
         .then(result => {
