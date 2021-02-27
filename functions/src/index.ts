@@ -1,6 +1,6 @@
 import * as functions from 'firebase-functions'
 import * as admin from 'firebase-admin'
-const axios = require('axios')
+import axios from 'axios'
 
 admin.initializeApp(functions.config().firebase);
 
@@ -13,7 +13,7 @@ mutation createUser($id: String = "", $name: String = "") {
 `
 
 // firebaseのユーザ作成時のイベントハンドラ
-exports.processSignUp = functions.auth.user().onCreate(user => {
+export const processSignUp = functions.auth.user().onCreate(user => {
   let customClaims = {
     'https://hasura.io/jwt/claims': {
       'x-hasura-default-role': 'user',
@@ -27,28 +27,27 @@ exports.processSignUp = functions.auth.user().onCreate(user => {
     .then(() => {
       let queryStr = {
         "query": createUser,
-        "variables": {id: user.uid, name: "tarou"}
+        "variables": {id: user.uid, name: user.displayName}
       }
 
       axios({
         method: 'post',
-        url: 'https://hasura-tutorial20210222.herokuapp.com/v1/graphql',
+        url: functions.config().hasura.admin.hasura.url,
         data: queryStr,
         headers: {
-          'x-hasura-admin-secret': process.env.REACT_APP_HASURA_ADMIN
+          'x-hasura-admin-secret': functions.config().hasura.admin_secret
         }
       })
 
       admin
-      .firestore()
-      .collection("user_meta")
-      .doc(user.uid)
-      .create({
-        refreshTime: admin.firestore.FieldValue.serverTimestamp()
-      });
+        .firestore()
+        .collection("user_meta")
+        .doc(user.uid)
+        .create({
+          refreshTime: admin.firestore.FieldValue.serverTimestamp()
+        });
     })
     .catch(error => {
       console.error(error)
-    })
-    
+    })  
 })

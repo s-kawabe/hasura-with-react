@@ -66,3 +66,81 @@ admin権限によるリクエストとなる。<br>
 ### カスタムクレームの設定
 Cloud Functionsで使う、Hasuraに対して「リクエストを行ったユーザの権限」を伝える<br>
 FirebaseのCLIを入れて`firebase init`しておく。
+
+[index.ts]
+```tsx
+import * as functions from 'firebase-functions'
+import * as admin from 'firebase-admin'
+import axios from 'axios'
+
+admin.initializeApp(functions.config().firebase);
+
+const createUser = `
+mutation createUser($id: String = "", $name: String = "") {
+  insert_users(objects: [{id: $id, name: $name}]) {
+    affected_rows
+  }
+}
+`
+
+// firebaseのユーザ作成時のイベントハンドラ
+export const processSignUp = functions.auth.user().onCreate(user => {
+  let customClaims = {
+    'https://hasura.io/jwt/claims': {
+      'x-hasura-default-role': 'user',
+      'x-hasura-allowed-roles': ['user'],
+      'x-hasura-user-id': user.uid
+    }
+  }
+
+  // setCustomUserClaims(uid: string, customUserClaims: object | null): Promise<void>
+  return admin.auth().setCustomUserClaims(user.uid, customClaims)
+    .then(() => {
+      let queryStr = {
+        "query": createUser,
+        "variables": {id: user.uid, name: "tarou"}
+      }
+
+      axios({
+        method: 'post',
+        url: functions.config().hasura.admin.hasura.url,
+        data: queryStr,
+        headers: {
+          'x-hasura-admin-secret': functions.config().hasura.admin_secret
+        }
+      })
+
+      admin
+        .firestore()
+        .collection("user_meta")
+        .doc(user.uid)
+        .create({
+          refreshTime: admin.firestore.FieldValue.serverTimestamp()
+        });
+    })
+    .catch(error => {
+      console.error(error)
+    })  
+})
+```
+
+# エラー集
+## funcsionsのデプロイに失敗する
+### 403 Forbiddonエラー
+```
+firebase logout
+```
+をして
+```
+firebase login
+```
+をしたあとに再度実行で成功。
+
+###  Functions did not deploy properly.
+`index.ts`のどっかがおかしい。
+
+axiosをプロジェクトrootのnode_modulesにインストールしてしまう<br>
+→functionsのindex.tsでaxios使おうとする<br>
+→firebase deployでエラー<br>
+**firebase functions を使う時は`npm install`, `yarn add` をする<br>
+ディレクトリに注意する！！**
