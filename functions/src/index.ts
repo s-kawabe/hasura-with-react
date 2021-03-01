@@ -13,41 +13,41 @@ mutation createUser($id: String = "", $name: String = "") {
 `
 
 // firebaseのユーザ作成時のイベントハンドラ
-export const processSignUp = functions.auth.user().onCreate(user => {
-  let customClaims = {
-    "https://hasura.io/jwt/claims": {
-      "x-hasura-default-role": "user",
-      "x-hasura-allowed-roles": ["user"],
-      "x-hasura-user-id": user.uid
-    }
-  }
-
-  // setCustomUserClaims(uid: string, customUserClaims: object | null): Promise<void>
-  return admin.auth().setCustomUserClaims(user.uid, customClaims)
-    .then(() => {
-      let queryStr = {
-        "query": createUser,
-        "variables": {id: user.uid, name: user.displayName}
+export const processSignUp = functions.auth.user().onCreate(async (user) => {
+  try {
+    let customClaims = {
+      "https://hasura.io/jwt/claims": {
+        "x-hasura-default-role": "user",
+        "x-hasura-allowed-roles": ["user"],
+        "x-hasura-user-id": user.uid
       }
+    }
+    // setCustomUserClaims(uid: string, customUserClaims: object | null): Promise<void>
+    await admin.auth().setCustomUserClaims(user.uid, customClaims)
 
-      axios({
-        method: 'post',
-        url: functions.config().hasura.admin.hasura.url,
-        data: queryStr,
-        headers: {
-          'x-hasura-admin-secret': functions.config().hasura.admin_secret
-        }
-      })
+    let queryStr = {
+      "query": createUser,
+      "variables": {id: user.uid, name: user.displayName}
+    }
 
-      admin
-        .firestore()
-        .collection("user_meta")
-        .doc(user.uid)
-        .create({
-          refreshTime: admin.firestore.FieldValue.serverTimestamp()
-        });
+    axios({
+      method: 'post',
+      url: functions.config().hasura.admin.hasura.url,
+      data: queryStr,
+      headers: {
+        'x-hasura-admin-secret': functions.config().hasura.admin_secret
+      }
     })
-    .catch(error => {
-      console.error(error)
-    })  
+
+    admin
+      .firestore()
+      .collection("user_meta")
+      .doc(user.uid)
+      .create({
+        refreshTime: admin.firestore.FieldValue.serverTimestamp()
+      });
+  }
+  catch(error) {
+    console.error(error);
+  }
 })

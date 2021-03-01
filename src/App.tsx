@@ -28,30 +28,47 @@ function App() {
     }
   })
 
-  const fetchUsers = () => {
-    fetch(endpoint, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${idToken}` },
-      body: JSON.stringify(query),
-    }).then(res => [
-      res.json().then(result => {
-          console.log(result)
-        })
-    ])
+  // const fetchUsers = () => {
+  //   fetch(endpoint, {
+  //     method: 'POST',
+  //     headers: { Authorization: `Bearer ${idToken}` },
+  //     body: JSON.stringify(query),
+  //   }).then(res => [
+  //     res.json().then(result => {
+  //         console.log(result)
+  //       })
+  //   ])
+  // }
+  const fetchUsers = async (): Promise<void> => {
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify(query)
+      })
+      const result = await res.json()
+      console.log(result);
+    } catch(error) {
+      console.error(error);
+    }
   }
 
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
+        <div className="flex">
+          <span>HASURA</span>
+          <img src={logo} className="App-logo" alt="logo" />
+          <span>TODO</span>
+        </div>
         <div>
-          <button onClick={login}>
+          <button onClick={login} className="button">
             LOGIN
           </button>
-          <button onClick={logout}>
+          <button onClick={logout} className="button">
             LOGOUT
           </button>
-          <button onClick={fetchUsers} disabled={!idToken.length}>
+          <button onClick={fetchUsers} disabled={!idToken.length} className="button">
             GET USER
           </button>
         </div>
