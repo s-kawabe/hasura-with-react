@@ -32,7 +32,7 @@ export const processSignUp = functions.auth.user().onCreate(async (user) => {
 
     axios({
       method: 'post',
-      url: functions.config().hasura.admin.hasura.url,
+      url: functions.config().hasura.url,
       data: queryStr,
       headers: {
         'x-hasura-admin-secret': functions.config().hasura.admin_secret
