@@ -3,6 +3,21 @@
 [公式チュートリアル参考](https://hasura.io/learn/ja/graphql/hasura/authentication/1-create-auth0-app/)
 →公式はAuth0だが firebase authenticationでやってみる
 
+## memo
+
+### firebase functions上の環境変数　設定/参照
+**設定**<br>
+
+```
+firebase functions:config:set hasura.apikey="***********"
+```
+
+**参照**<br>
+
+```
+firebase functions:config:get
+```
+
 ## Hasura上に適当にテーブルをつくってfetchしてみる
 
 ```tsx

@@ -14,14 +14,15 @@ mutation createUser($id: String = "", $name: String = "") {
 
 // firebaseのユーザ作成時のイベントハンドラ
 export const processSignUp = functions.auth.user().onCreate(async (user) => {
-  try {
-    let customClaims = {
-      "https://hasura.io/jwt/claims": {
-        "x-hasura-default-role": "user",
-        "x-hasura-allowed-roles": ["user"],
-        "x-hasura-user-id": user.uid
-      }
+  let customClaims = {
+    "https://hasura.io/jwt/claims": {
+      "x-hasura-default-role": "user",
+      "x-hasura-allowed-roles": ["user"],
+      "x-hasura-user-id": user.uid
     }
+  }
+  
+  try {
     // setCustomUserClaims(uid: string, customUserClaims: object | null): Promise<void>
     await admin.auth().setCustomUserClaims(user.uid, customClaims)
 

@@ -19,12 +19,11 @@ function App() {
     setIdToken('')
   }
 
-  firebase.auth().onAuthStateChanged(user => {
+  firebase.auth().onAuthStateChanged(async (user) => {
     if(user) {
-      user.getIdToken().then(token => {
-        setIdToken(token)
-        console.log(token)
-      })
+      const token = await user.getIdToken()
+      setIdToken(token)
+      console.log(token)
     }
   })
 
@@ -41,6 +40,7 @@ function App() {
   // }
   const fetchUsers = async (): Promise<void> => {
     try {
+      // fetchじゃなくuseQueryつかう！
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { Authorization: `Bearer ${idToken}` },
