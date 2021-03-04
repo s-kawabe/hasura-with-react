@@ -15,3 +15,12 @@ query selectAllUsers {
   } 
 }
 `
+
+export const SELECT_USER = gql`
+query selectUser($name: String) { 
+  users(where: {name: {_eq: $name}}) { 
+    id 
+    name 
+  } 
+}
+`

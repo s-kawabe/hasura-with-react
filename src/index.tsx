@@ -2,15 +2,27 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
-import { ApolloProvider } from '@apollo/react-hooks'
-import { client } from './apollo/client'
+import firebase from './firebase/firebaseConfig'
+import { Client } from './apollo/Client';
+
+export type GlobalStateType = {
+  user: firebase.User | null
+}
+
+const initialValue = {
+  user: null
+}
+
+export const GlobalState = React.createContext<GlobalStateType>(initialValue)
 
 ReactDOM.render(
-  <ApolloProvider client={client}>
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>
-  </ApolloProvider>,
+  <GlobalState.Provider value={initialValue}>
+    <Client>
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>
+    </Client>
+  </GlobalState.Provider>,
   document.getElementById('root')
 );
 
