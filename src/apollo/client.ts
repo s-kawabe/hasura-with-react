@@ -12,7 +12,6 @@ export const createClient = () => {
 
   const authLink = setContext(async (_, { headers }) => {
     const token = await firebase.auth().currentUser?.getIdToken(true)
-    console.log(token)
     return {
       headers: {
         ...headers,

@@ -242,3 +242,10 @@ let customClaims = {
   }
 }
 ```
+
+# インストール集
+## functions以下
+
+```
+npm i @apollo/client graphql node-fetch @types/node-fetch 
+```

@@ -1,16 +1,41 @@
 import * as functions from 'firebase-functions'
 import * as admin from 'firebase-admin'
-import axios from 'axios'
+import { gql, ApolloClient, createHttpLink, InMemoryCache } from '@apollo/client'
+import { setContext } from '@apollo/client/link/context'
+import fetch from 'node-fetch'
+
 
 admin.initializeApp(functions.config().firebase);
 
-const createUser = `
-mutation createUser($id: String = "", $name: String = "") {
-  insert_users(objects: [{id: $id, name: $name}]) {
-    affected_rows
+const mutation = gql`
+mutation InsertUsers($id: String, $name: String) {
+  insert_users(objects: { id: $id, name: $name }) {
+    returning {
+      id
+      name
+      created_at
+    }
   }
 }
 `
+
+const httpLink = createHttpLink({ 
+  uri: functions.config().hasura.url, 
+  fetch: fetch as any 
+})
+const authLink = setContext(async (_, { headers }) => {
+  return {
+    headers: {
+      ...headers,
+      'x-hasura-admin-secret': functions.config().hasura.admin_secret
+    }
+  }
+})
+
+const client = new ApolloClient({
+  link: authLink.concat(httpLink),
+  cache: new InMemoryCache()
+})
 
 // firebaseのユーザ作成時のイベントハンドラ
 export const processSignUp = functions.auth.user().onCreate(async (user) => {
@@ -26,18 +51,9 @@ export const processSignUp = functions.auth.user().onCreate(async (user) => {
     // setCustomUserClaims(uid: string, customUserClaims: object | null): Promise<void>
     await admin.auth().setCustomUserClaims(user.uid, customClaims)
 
-    let queryStr = {
-      "query": createUser,
-      "variables": {id: user.uid, name: user.displayName}
-    }
-
-    axios({
-      method: 'post',
-      url: functions.config().hasura.url,
-      data: queryStr,
-      headers: {
-        'x-hasura-admin-secret': functions.config().hasura.admin_secret
-      }
+    await client.mutate({
+      variables: { id: user.uid, name: user.displayName || "unknown" },
+      mutation
     })
 
     admin

@@ -66,12 +66,10 @@ function App() {
             LOGOUT
           </button>
           <button onClick={() => {fetchUsers(selectAllUsers)}} disabled={!idToken.length} className="button">
-            GET USER
+            GET USERS
           </button>
         </div>
-        <div>
-          <p>{result}</p>
-        </div>
+        <p>{result}</p>
       </header>
     </div>
   )
