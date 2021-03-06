@@ -6,14 +6,22 @@ import { SELECT_ALL_USERS } from './apollo/query'
 import { useQuery } from '@apollo/react-hooks'
 import { userContext } from './context/UserContext';
 
-// type User = {
-//   id: string
-//   name: string
-// }
+type Data = {
+  users: {
+    __typename: string,
+    id: string 
+    name: string
+  }[]
+}
+
+const initialData = {
+  users: []
+}
 
 function App() {
   const [idToken, setIdToken] = useState('')
-  const [result, setResult] = useState('')
+  const [name, setName] = useState('')
+  const [data, setData] = useState<Data>(initialData)
   // const [variable, setVariable] = useState<string>('') 
 
   const context = useContext(userContext)
@@ -33,16 +41,17 @@ function App() {
     if(user) {
       const token = await user.getIdToken()
       setIdToken(token)
+      setName(user.displayName || 'unknown user')
       context.setAuthUser(user)
     }
   })
 
   const fetchUsers = ({ loading, error, data }: any) => {
     try {
-      if (loading) setResult('loading...')
-      if (error) setResult(`${error}`)
+      if (loading) console.log(loading)
+      if (error) console.log(error)
       if (data) {
-        setResult(`${data}`)
+        setData(data)
         console.log(data)
       }
     } catch(error) {
@@ -69,7 +78,28 @@ function App() {
             GET USERS
           </button>
         </div>
-        <p>{result}</p>
+        <p className="message">
+          {name 
+            ? <div>logined by <span className="bold">{name}</span></div>
+            : 'Please Login'}
+        </p>
+        {data.users.length !== 0 
+          ? <table>
+            <thead>
+              <th>id</th>
+              <th>name</th>
+            </thead>
+            <tbody>
+              {data.users.map((user) => (
+                <div key={user.id}>
+                  <td>{user.id}</td>
+                  <td>{user.name}</td>
+                </div>
+              ))}
+            </tbody>
+          </table>
+          : ''
+        }
       </header>
     </div>
   )
