@@ -2,19 +2,20 @@ import React,{ useState } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import firebase from './firebase/firebaseConfig';
-import { SELECT_ALL_USERS, SELECT_USER } from './apollo/query'
+import { SELECT_ALL_USERS } from './apollo/query'
+import { useQuery } from '@apollo/react-hooks'
 
-type User = {
-  id: string
-  name: string
-}
-
-const endpoint = process.env.REACT_APP_HASURA_URL
+// type User = {
+//   id: string
+//   name: string
+// }
 
 function App() {
-  const [idToken, setIdToken] = useState<string>('')
-  const [result, setResult] = useState<User[]>([])
+  const [idToken, setIdToken] = useState('')
+  const [result, setResult] = useState('')
   // const [variable, setVariable] = useState<string>('') 
+
+  const selectAllUsers = useQuery(SELECT_ALL_USERS)
 
   const login = () => {
     const provider = new firebase.auth.GoogleAuthProvider()
@@ -28,34 +29,16 @@ function App() {
 
   firebase.auth().onAuthStateChanged(async (user) => {
     if(user) {
-      // InMemoryCacheにtokenを保存→親コンポーネント再レンダリングによりlinkのheaderにtokenを含める→ここでuseQuery使用可能
-      // と言う形にもっていきたい
       const token = await user.getIdToken()
+      setIdToken(token)
     }
   })
 
-  // const fetchUsers = () => {
-  //   fetch(endpoint, {
-  //     method: 'POST',
-  //     headers: { Authorization: `Bearer ${idToken}` },
-  //     body: JSON.stringify(query),
-  //   }).then(res => [
-  //     res.json().then(result => {
-  //         console.log(result)
-  //       })
-  //   ])
-  // }
-  const fetchUsers = async (): Promise<void> => {
+  const fetchUsers = ({ loading, error, data }: any) => {
     try {
-      if(endpoint) {
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${idToken}` },
-          body: JSON.stringify(query)
-        })
-        const result = await res.json()
-        console.log(result);
-      }
+      if (loading) setResult('loading...')
+      if (error) setResult(`${error}`)
+      if (data) setResult(`${data}`)
     } catch(error) {
       console.error(error);
     }
@@ -76,9 +59,12 @@ function App() {
           <button onClick={logout} className="button">
             LOGOUT
           </button>
-          <button onClick={fetchUsers} disabled={!idToken.length} className="button">
+          <button onClick={() => {fetchUsers(selectAllUsers)}} disabled={!idToken.length} className="button">
             GET USER
           </button>
+        </div>
+        <div>
+          <p>{result}</p>
         </div>
       </header>
     </div>

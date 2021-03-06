@@ -11,7 +11,8 @@ mutation createUser($id: String = "", $name: String = "") {
 export const SELECT_ALL_USERS = gql`
 query selectAllUsers { 
   users { 
-    id name 
+    id
+    name 
   } 
 }
 `
