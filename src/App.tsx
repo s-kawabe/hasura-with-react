@@ -1,9 +1,10 @@
-import React,{ useState } from 'react';
+import React,{ useState, useContext } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import firebase from './firebase/firebaseConfig';
 import { SELECT_ALL_USERS } from './apollo/query'
 import { useQuery } from '@apollo/react-hooks'
+import { userContext } from './context/UserContext';
 
 // type User = {
 //   id: string
@@ -15,6 +16,7 @@ function App() {
   const [result, setResult] = useState('')
   // const [variable, setVariable] = useState<string>('') 
 
+  const context = useContext(userContext)
   const selectAllUsers = useQuery(SELECT_ALL_USERS)
 
   const login = () => {
@@ -31,6 +33,7 @@ function App() {
     if(user) {
       const token = await user.getIdToken()
       setIdToken(token)
+      context.setAuthUser(user)
     }
   })
 
@@ -38,7 +41,10 @@ function App() {
     try {
       if (loading) setResult('loading...')
       if (error) setResult(`${error}`)
-      if (data) setResult(`${data}`)
+      if (data) {
+        setResult(`${data}`)
+        console.log(data)
+      }
     } catch(error) {
       console.error(error);
     }

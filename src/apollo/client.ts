@@ -1,33 +1,28 @@
-import { ApolloClient, InMemoryCache } from 'apollo-boost'
-import { ApolloLink } from 'apollo-link'
-import { HttpLink } from 'apollo-link-http'
-import type { NormalizedCacheObject } from '@apollo/client'
+import { ApolloClient, InMemoryCache } from '@apollo/client'
+import { createHttpLink } from '@apollo/client'
 import firebase from '../firebase/firebaseConfig'
+import { setContext } from '@apollo/client/link/context' 
 
 const cache = new InMemoryCache();
 const HASURA_URL = process.env.REACT_APP_HASURA_URL;
 
-// firebaseのsessionからuser情報を取得する
-let user: any = null;
+const httpLinnk = createHttpLink({ uri: HASURA_URL })
 
-const httpLinnk = new HttpLink({ uri: HASURA_URL })
+export const createClient = () => {
 
-const headersLink = new ApolloLink((operation, forward) => {  
-  operation.setContext({
-    headers: {
-      Authorization: user ? `Bearer ${user.getIdToken()}` : ''
+  const authLink = setContext(async (_, { headers }) => {
+    const token = await firebase.auth().currentUser?.getIdToken(true)
+    console.log(token)
+    return {
+      headers: {
+        ...headers,
+        Authorization: token ? `Bearer ${token}` : ''
+      }
     }
   })
-  return forward(operation)
-})
 
-const link = ApolloLink.from([headersLink, httpLinnk])
-
-export const createClient = (): ApolloClient<NormalizedCacheObject> => {
-  user = firebase.auth().currentUser;
-  console.log('ログイン中user:', user)
   return new ApolloClient({
-    cache: cache,
-    link: link
+    link: typeof window === "undefined" ? httpLinnk : authLink.concat(httpLinnk),
+    cache: cache
   })
 }
