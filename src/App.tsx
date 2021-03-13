@@ -1,12 +1,15 @@
-import React,{ useState, useContext } from 'react';
+import React,{ useState } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import firebase from './firebase/firebaseConfig';
 import { SELECT_ALL_USERS } from './apollo/query'
 import { useQuery } from '@apollo/react-hooks'
-import { userContext } from './context/UserContext';
+import { useReactiveVar } from '@apollo/client'
+import { Button, useToast } from '@chakra-ui/react'
+import { TodoList } from './components/TodoList'
+import { loginUserVar } from './apollo/cache'
 
-type Data = {
+export type Data = {
   users: {
     __typename: string,
     id: string 
@@ -23,18 +26,25 @@ function App() {
   const [name, setName] = useState('')
   const [data, setData] = useState<Data>(initialData)
   // const [variable, setVariable] = useState<string>('') 
-
-  const context = useContext(userContext)
+  const toast = useToast()
+  let loginUser = useReactiveVar(loginUserVar)
+  
   const selectAllUsers = useQuery(SELECT_ALL_USERS)
 
-  const login = () => {
+  const login = async () => {
     const provider = new firebase.auth.GoogleAuthProvider()
-    firebase.auth().signInWithPopup(provider)
+    await firebase.auth().signInWithPopup(provider)
+    successToast('success loined.')
   }
 
   const logout = () => {
     firebase.auth().signOut()
     setIdToken('')
+    setName('')
+    setData(initialData) // ここら辺めっちゃ再レンダリングされちゃいそう
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    loginUser = []
+    successToast('success logouted.')
   }
 
   firebase.auth().onAuthStateChanged(async (user) => {
@@ -42,7 +52,10 @@ function App() {
       const token = await user.getIdToken()
       setIdToken(token)
       setName(user.displayName || 'unknown user')
-      context.setAuthUser(user)
+      // context.setAuthUser(user) // contextでやってたとき
+      // ここでApolloのuserのstateを更新すればApolloProviderがもう１回走るのでは
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      loginUser = [user]
     }
   })
 
@@ -59,6 +72,16 @@ function App() {
     }
   }
 
+  const successToast = (title: string) => {
+    return toast({
+      position: "top-right",
+      title: title,
+      status: 'success',
+      duration: 5000,
+      isClosable: true
+    })
+  }
+
   return (
     <div className="App">
       <header className="App-header">
@@ -68,36 +91,26 @@ function App() {
           <span>TODO</span>
         </div>
         <div>
-          <button onClick={login} className="button">
+          <Button onClick={() => {login()}} bgColor="teal.500" mr="2" >
             LOGIN
-          </button>
-          <button onClick={logout} className="button">
+          </Button>
+          <Button onClick={() => {logout()}} bgColor="teal.500" mr="2">
             LOGOUT
-          </button>
-          <button onClick={() => {fetchUsers(selectAllUsers)}} disabled={!idToken.length} className="button">
+          </Button>
+          <Button onClick={() => {fetchUsers(selectAllUsers)}} disabled={!idToken.length} bgColor="teal.500">
             GET USERS
-          </button>
+          </Button>
+          {/* <Button size="xs" color="teal">
+            aaaaa
+          </Button> */}
         </div>
-        <p className="message">
+        <div className="message">
           {name 
             ? <div>logined by <span className="bold">{name}</span></div>
             : 'Please Login'}
-        </p>
+        </div>
         {data.users.length !== 0 
-          ? <table>
-            <thead>
-              <th>id</th>
-              <th>name</th>
-            </thead>
-            <tbody>
-              {data.users.map((user) => (
-                <div key={user.id}>
-                  <td>{user.id}</td>
-                  <td>{user.name}</td>
-                </div>
-              ))}
-            </tbody>
-          </table>
+          ? <TodoList data={data}/>
           : ''
         }
       </header>

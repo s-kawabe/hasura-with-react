@@ -7,7 +7,7 @@ type Props = {
   data: Data
 }
 
-const TodoToast: React.VFC<Props> = ({ data }) => {
+const TodoList: React.VFC<Props> = ({ data }) => {
   return (
     <List spacing="3" display="flex" flexDirection="column" justifyContent="flex-start">
       {data.users.map((user) => (
@@ -20,4 +20,4 @@ const TodoToast: React.VFC<Props> = ({ data }) => {
   )
 }
 
-export { TodoToast }
+export { TodoList }

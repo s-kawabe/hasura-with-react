@@ -230,19 +230,6 @@ axiosをプロジェクトrootのnode_modulesにインストールしてしま�
 ディレクトリに注意する！！**
 
 
-### functionsのAPI叩くと「カスタムクレームがない」と言われる
-たぶん以下の部分をシングルクォートにしていたのが原因
-
-```ts
-let customClaims = {
-  "https://hasura.io/jwt/claims": {
-    "x-hasura-default-role": "user",
-    "x-hasura-allowed-roles": ["user"],
-    "x-hasura-user-id": user.uid
-  }
-}
-```
-
 # インストール集
 ## functions以下
 
